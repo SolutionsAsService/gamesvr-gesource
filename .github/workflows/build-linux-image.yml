@@ -13,6 +13,8 @@ on:
 
 jobs:
   build-and-push:
+    # Upstream Docker Hub/LacledesLAN GHCR publishing; skipped in forks without those secrets.
+    if: github.repository_owner == 'LacledesLAN'
     runs-on: ubuntu-latest
 
     steps:

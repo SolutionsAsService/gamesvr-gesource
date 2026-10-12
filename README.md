@@ -31,6 +31,24 @@ docker run --rm lacledeslan/gamesvr-gesource ./ll-tests/gamesvr-gesource.sh
 docker run -it --rm --net=host lacledeslan/gamesvr-gesource ./srcds_run -game gesource +map ge_depot +sv_lan 1 +maxplayers 16
 ```
 
+## Env-driven entrypoint image (SolutionsAsService fork)
+
+`devhub.Dockerfile` derives from `ghcr.io/lacledeslan/gamesvr-gesource:latest` and adds `dist/linux/devhub-entrypoint.sh`, so the server starts without a run command (the stock image's CMD is `/bin/bash`). It is published by `.github/workflows/devhub-image.yml` as `ghcr.io/solutionsasservice/gamesvr-gesource:latest` (linux/amd64).
+
+| Variable | Default | Rule |
+| --- | --- | --- |
+| `GES_MAP` | `ge_archives` | letters/numbers/`_`; must exist in `gesource/maps` |
+| `GES_MAXPLAYERS` | `16` | integer 1-32 |
+| `GES_HOSTNAME` | `GoldenEye: Source` | 1-63 chars; no quotes, `;`, `\\`, `$` or backticks |
+| `GES_PASSWORD` | empty (no join password) | optional; 1-64 chars, no spaces/quotes/`;`/`\\`/`$`/backticks |
+| `GES_RCON_PASSWORD` | empty (RCON disabled) | same as `GES_PASSWORD`; never publish 27015/TCP |
+
+Invalid values stop the container with exit code 64 and an error naming only the key. The entrypoint runs `/app/srcds_run -game gesource -norestart -port 27015 +maxplayers <n> +map <map>` and writes hostname/passwords to `gesource/cfg/devhub_env.cfg`, chained from the end of `server.cfg`. Publish only 27015/UDP.
+
+```shell
+docker run --rm -p 27015:27015/udp -e GES_MAP=ge_depot -e GES_PASSWORD=change-me ghcr.io/solutionsasservice/gamesvr-gesource:latest
+```
+
 ## Getting Started with Game Servers in Docker
 
 [Docker](https://docs.docker.com/) is an open-source project that bundles applications into lightweight, portable, self-sufficient containers. For a crash course on running Dockerized game servers check out [Using Docker for Game Servers](https://github.com/LacledesLAN/README.1ST/blob/master/GameServers/DockerAndGameServers.md). For tips, tricks, and recommended tools for working with Laclede's LAN Dockerized game server repos see the guide for [Working with our Game Server Repos](https://github.com/LacledesLAN/README.1ST/blob/master/GameServers/WorkingWithOurRepos.md). You can also browse all of our other Dockerized game servers: [Laclede's LAN Game Servers Directory](https://github.com/LacledesLAN/README.1ST/tree/master/GameServers).
